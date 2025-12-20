@@ -2,7 +2,7 @@
 
 A real-time multi-agent system demonstrating LLM collaboration on open-source GitHub issues, featuring WebSocket streaming for instant UI updates.
 
-![AI Village v3](https://res.cloudinary.com/dvytkanrg/image/upload/v1766248232/oss-v3_placeholder.png)
+![AI Village v3](https://res.cloudinary.com/dvytkanrg/image/upload/v1766261536/oss-v3_zbpp28.png)
 
 ## Why v3?
 
