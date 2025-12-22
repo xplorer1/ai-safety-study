@@ -6,6 +6,10 @@ Three LLM personas debate and vote on the best approach.
 import asyncio
 from llm import ask_with_role
 from config import get_model_display_name, get_model_color
+from database import (
+    create_roundtable, complete_roundtable, 
+    save_proposal, save_vote, update_issue_status
+)
 
 def get_engineers():
     """Get engineer configurations with actual LLM names."""
@@ -81,12 +85,22 @@ async def run_roundtable(issue: dict):
     """
     ENGINEERS = get_engineers()
     
+    # Create roundtable in database
+    issue_db_id = issue.get("issue_db_id")
+    roundtable_id = None
+    if issue_db_id:
+        roundtable_id = await create_roundtable(issue_db_id)
+        await update_issue_status(issue_db_id, "processing")
+    
     yield {
         "type": "roundtable_start",
         "agent": "roundtable",
         "message": "Engineer Roundtable beginning...",
-        "data": {"engineers": {k: {"name": v["name"], "style": v["style"], "color": v["color"]} 
-                              for k, v in ENGINEERS.items()}}
+        "data": {
+            "roundtable_id": roundtable_id,
+            "engineers": {k: {"name": v["name"], "style": v["style"], "color": v["color"]} 
+                              for k, v in ENGINEERS.items()}
+        }
     }
     
     issue_context = f"""
@@ -128,6 +142,10 @@ Keep your response concise (under 300 words)."""
 
         response = await asyncio.to_thread(ask_with_role, eng["role"], prompt, eng_id)
         proposals[eng_id] = response
+        
+        # Save proposal to database (Round 1)
+        if roundtable_id:
+            await save_proposal(roundtable_id, eng_id, eng["name"], 1, response)
         
         yield {
             "type": "proposal",
@@ -178,6 +196,10 @@ Be constructive but honest. Keep response under 250 words."""
         response = await asyncio.to_thread(ask_with_role, eng["role"], prompt, eng_id)
         critiques[eng_id] = response
         
+        # Save critique to database (Round 2)
+        if roundtable_id:
+            await save_proposal(roundtable_id, eng_id, eng["name"], 2, response)
+        
         yield {
             "type": "critique",
             "agent": eng_id,
@@ -227,6 +249,10 @@ Keep response under 300 words. End with your final code fix."""
 
         response = await asyncio.to_thread(ask_with_role, eng["role"], prompt, eng_id)
         revised_proposals[eng_id] = response
+        
+        # Save revision to database (Round 3)
+        if roundtable_id:
+            await save_proposal(roundtable_id, eng_id, eng["name"], 3, response)
         
         yield {
             "type": "revision",
@@ -294,6 +320,10 @@ Choose from: {', '.join([ENGINEERS[oid]['name'] for oid in ENGINEERS])}"""
         votes[eng_id] = vote_for
         vote_reasons[eng_id] = response
         
+        # Save vote to database
+        if roundtable_id:
+            await save_vote(roundtable_id, eng_id, eng["name"], vote_for, response)
+        
         yield {
             "type": "vote",
             "agent": eng_id,
@@ -315,19 +345,33 @@ Choose from: {', '.join([ENGINEERS[oid]['name'] for oid in ENGINEERS])}"""
     winner = max(vote_counts.items(), key=lambda x: x[1])
     winner_id = winner[0]
     winner_eng = ENGINEERS[winner_id]
+    final_fix = revised_proposals[winner_id]
+    
+    # Complete roundtable in database
+    if roundtable_id:
+        await complete_roundtable(
+            roundtable_id,
+            winner_engineer=winner_id,
+            winner_model=winner_eng["name"],
+            vote_count=winner[1],
+            final_fix=final_fix
+        )
+        if issue_db_id:
+            await update_issue_status(issue_db_id, "completed")
     
     yield {
         "type": "roundtable_complete",
         "agent": "roundtable",
         "message": f"WINNER: {winner_eng['name']} with {winner[1]} vote(s)!",
         "data": {
+            "roundtable_id": roundtable_id,
             "winner": winner_id,
             "winner_name": winner_eng["name"],
             "winner_style": winner_eng["style"],
             "winner_color": winner_eng["color"],
             "vote_count": winner[1],
             "votes": votes,
-            "fix": revised_proposals[winner_id]
+            "fix": final_fix
         }
     }
 

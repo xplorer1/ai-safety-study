@@ -1,290 +1,329 @@
 import React from 'react';
 
-export function ScoutPanel({ events, selectedIssue, status, modelInfo }) {
-  const isRunning = status === 'running' && !selectedIssue;
-  const latestEvent = events[events.length - 1];
-
+export function ScoutPanel({ queueStatus, currentIssue, events = [], status = 'idle' }) {
+  const recentEvents = events.slice(-5);
+  
   return (
-    <div className="panel">
+    <div className="scout-panel">
       <div className="panel-header">
-        <div className="panel-title">
-          <span className="panel-icon">{'>'}_</span>
-          Scout
+        <h2>Scout</h2>
+        <span className={`status-badge ${status}`}>
+          {status === 'running' ? 'Running...' : status === 'complete' ? 'Complete' : 'Auto @ Noon'}
+        </span>
+      </div>
+
+      {/* Discovery Activity */}
+      {status === 'running' && (
+        <div className="discovery-activity">
+          <div className="section-label">Discovery Progress</div>
+          <div className="activity-feed">
+            {recentEvents.map((event, i) => (
+              <div key={i} className={`activity-item ${event.type}`}>
+                <span className="activity-message">{event.message}</span>
+              </div>
+            ))}
+            <div className="thinking-indicator">
+              <span className="dot"></span>
+              <span className="dot"></span>
+              <span className="dot"></span>
+            </div>
+          </div>
         </div>
-        <div className="model-badge" style={{ '--badge-color': modelInfo?.color || '#FFD700' }}>
-          {modelInfo?.display_name || 'Mistral 7B'}
+      )}
+
+      {/* Current Issue */}
+      {currentIssue && (
+        <div className="current-issue">
+          <div className="section-label">Now Processing</div>
+          <div className="issue-card active">
+            <div className="issue-number">#{currentIssue.github_number || currentIssue.number}</div>
+            <div className="issue-title">{currentIssue.title?.slice(0, 60)}...</div>
+            <div className="issue-meta">
+              <span className="repo">{currentIssue.repo_name || currentIssue.repo}</span>
+              {currentIssue.score && (
+                <span className="score">Score: {currentIssue.score}/10</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Queue Stats */}
+      <div className="queue-section">
+        <div className="section-label">Issue Queue</div>
+        <div className="queue-stats">
+          <div className="stat">
+            <span className="stat-value">{queueStatus.ready || 0}</span>
+            <span className="stat-label">Ready</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{queueStatus.processing || 0}</span>
+            <span className="stat-label">Processing</span>
+          </div>
         </div>
       </div>
 
-      <div className="panel-content">
-        {/* Status indicator */}
-        <div className="status-row">
-          <span className="status-label">Status:</span>
-          <span className={`status-value ${isRunning ? 'running' : selectedIssue ? 'complete' : 'idle'}`}>
-            {isRunning ? 'Searching...' : selectedIssue ? 'Complete' : 'Idle'}
-          </span>
-        </div>
-
-        {/* Live activity */}
-        {isRunning && latestEvent && (
-          <div className="activity-indicator">
-            <div className="spinner"></div>
-            <span>{latestEvent.message}</span>
-          </div>
-        )}
-
-        {/* Events feed */}
-        <div className="events-container">
-          {events.length === 0 && !isRunning && (
-            <div className="placeholder-text">
-              Click "Rock 'n Roll" to start
-            </div>
-          )}
-          
-          {[...events].reverse().map((event, i) => (
-            <div key={i} className={`event-item ${event.type}`}>
-              <div className="event-type">{event.type}</div>
-              <div className="event-message">{event.message}</div>
-              {event.data?.score && (
-                <div className="event-score">
-                  Score: <span className={event.data.score >= 7 ? 'high' : event.data.score >= 5 ? 'medium' : 'low'}>
-                    {event.data.score}/10
-                  </span>
-                </div>
-              )}
+      {/* Pending Issues */}
+      <div className="pending-section">
+        <div className="section-label">Up Next</div>
+        <div className="pending-list">
+          {queueStatus.pending?.slice(0, 5).map((issue, i) => (
+            <div key={issue.id || i} className="pending-item">
+              <span className="pending-score">{issue.score}</span>
+              <span className="pending-title">{issue.title?.slice(0, 35)}...</span>
             </div>
           ))}
+          {(!queueStatus.pending || queueStatus.pending.length === 0) && (
+            <div className="empty-queue">
+              Queue empty. Click "Run Scout Now" to discover issues.
+            </div>
+          )}
         </div>
-
-        {/* Selected issue */}
-        {selectedIssue && (
-          <div className="selected-issue">
-            <div className="issue-header">Selected Issue</div>
-            <div className="issue-repo">{selectedIssue.repo}</div>
-            <div className="issue-title">
-              #{selectedIssue.number}: {selectedIssue.title}
-            </div>
-            <div className="issue-score">
-              AI Score: <span className="score-badge">{selectedIssue.score}/10</span>
-            </div>
-            <a 
-              href={selectedIssue.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="issue-link"
-            >
-              View on GitHub
-            </a>
-          </div>
-        )}
       </div>
 
       <style>{`
-        .panel {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-          overflow: hidden;
+        .scout-panel {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
         }
 
         .panel-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 16px 20px;
+          padding: 16px;
           border-bottom: 1px solid var(--border-color);
-          background: var(--bg-tertiary);
         }
 
-        .panel-title {
-          font-size: 18px;
+        .panel-header h2 {
+          font-size: 16px;
           font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          margin: 0;
         }
 
-        .panel-icon {
-          font-family: var(--font-mono);
-          color: var(--accent-gold);
+        .status-badge {
+          font-size: 10px;
+          padding: 3px 8px;
+          border-radius: 10px;
+          font-weight: 600;
         }
 
-        .model-badge {
-          font-size: 12px;
-          padding: 4px 10px;
-          border-radius: 20px;
-          background: color-mix(in srgb, var(--badge-color) 15%, transparent);
-          color: var(--badge-color);
-          border: 1px solid color-mix(in srgb, var(--badge-color) 30%, transparent);
-          font-family: var(--font-mono);
+        .status-badge.idle {
+          background: var(--accent-lavender);
+          color: var(--bg-primary);
         }
 
-        .panel-content {
-          padding: 16px 20px;
+        .status-badge.running {
+          background: var(--accent-turquoise);
+          color: var(--bg-primary);
+          animation: pulse 1.5s infinite;
         }
 
-        .status-row {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 12px;
+        .status-badge.complete {
+          background: var(--accent-gold);
+          color: var(--bg-primary);
         }
 
-        .status-label {
-          color: var(--text-muted);
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
         }
 
-        .status-value {
-          font-weight: 500;
-        }
-
-        .status-value.running {
-          color: var(--accent-gold);
-        }
-
-        .status-value.complete {
-          color: var(--accent-turquoise);
-        }
-
-        .status-value.idle {
-          color: var(--text-muted);
-        }
-
-        .activity-indicator {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px;
-          background: color-mix(in srgb, var(--accent-gold) 10%, transparent);
-          border-radius: 8px;
-          margin-bottom: 12px;
-          font-size: 14px;
-          color: var(--accent-gold);
-        }
-
-        .spinner {
-          width: 16px;
-          height: 16px;
-          border: 2px solid var(--accent-gold);
-          border-top-color: transparent;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .events-container {
+        /* Discovery Activity */
+        .discovery-activity {
+          padding: 16px;
+          border-bottom: 1px solid var(--border-color);
           max-height: 200px;
           overflow-y: auto;
-          margin-bottom: 16px;
         }
 
-        .placeholder-text {
-          color: var(--text-muted);
-          text-align: center;
-          padding: 20px;
-          font-style: italic;
+        .activity-feed {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
         }
 
-        .event-item {
-          padding: 10px 12px;
-          border-left: 3px solid var(--border-color);
-          margin-bottom: 8px;
-          background: var(--bg-secondary);
-          border-radius: 0 6px 6px 0;
-          animation: slideIn 0.3s ease-out;
+        .activity-item {
+          padding: 8px;
+          background: var(--bg-tertiary);
+          border-radius: 6px;
+          font-size: 11px;
+          border-left: 2px solid var(--accent-turquoise);
         }
 
-        .event-item.analysis {
-          border-left-color: var(--accent-turquoise);
+        .activity-message {
+          color: var(--text-secondary);
+          line-height: 1.4;
         }
 
-        .event-item.step {
-          border-left-color: var(--accent-gold);
+        .thinking-indicator {
+          display: flex;
+          gap: 4px;
+          justify-content: center;
+          padding: 8px;
         }
 
-        .event-item.agent_complete {
-          border-left-color: var(--accent-lavender);
+        .thinking-indicator .dot {
+          width: 6px;
+          height: 6px;
+          background: var(--accent-turquoise);
+          border-radius: 50%;
+          animation: bounce 1.4s infinite ease-in-out both;
         }
 
-        .event-type {
+        .thinking-indicator .dot:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-indicator .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0); }
+          40% { transform: scale(1); }
+        }
+
+        .section-label {
           font-size: 10px;
           text-transform: uppercase;
           color: var(--text-muted);
-          font-family: var(--font-mono);
-          margin-bottom: 4px;
-        }
-
-        .event-message {
-          font-size: 13px;
-          color: var(--text-secondary);
-        }
-
-        .event-score {
-          margin-top: 6px;
-          font-size: 12px;
-        }
-
-        .event-score .high { color: var(--accent-turquoise); }
-        .event-score .medium { color: var(--accent-gold); }
-        .event-score .low { color: var(--accent-coral); }
-
-        .selected-issue {
-          padding: 16px;
-          background: color-mix(in srgb, var(--accent-turquoise) 8%, var(--bg-secondary));
-          border: 1px solid color-mix(in srgb, var(--accent-turquoise) 30%, transparent);
-          border-radius: 8px;
-        }
-
-        .issue-header {
-          font-size: 12px;
-          text-transform: uppercase;
-          color: var(--accent-turquoise);
+          letter-spacing: 0.5px;
           margin-bottom: 8px;
           font-weight: 600;
         }
 
-        .issue-repo {
-          font-size: 12px;
-          color: var(--text-muted);
-          font-family: var(--font-mono);
+        /* Current Issue */
+        .current-issue {
+          padding: 16px;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .issue-card {
+          padding: 12px;
+          background: var(--bg-tertiary);
+          border-radius: 8px;
+          border-left: 3px solid var(--accent-gold);
+        }
+
+        .issue-card.active {
+          background: color-mix(in srgb, var(--accent-gold) 10%, var(--bg-tertiary));
+          animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+          50% { box-shadow: 0 0 8px 2px rgba(251, 191, 36, 0.2); }
+        }
+
+        .issue-number {
+          font-size: 11px;
+          color: var(--accent-gold);
+          font-weight: 600;
+          margin-bottom: 4px;
         }
 
         .issue-title {
-          font-size: 14px;
-          font-weight: 500;
-          margin: 8px 0;
-        }
-
-        .issue-score {
           font-size: 13px;
-          color: var(--text-secondary);
+          color: var(--text-primary);
+          line-height: 1.4;
+          margin-bottom: 8px;
         }
 
-        .score-badge {
-          font-weight: 600;
+        .issue-meta {
+          display: flex;
+          justify-content: space-between;
+          font-size: 11px;
+        }
+
+        .repo {
+          color: var(--accent-lavender);
+          font-family: var(--font-mono);
+        }
+
+        .score {
+          color: var(--text-muted);
+        }
+
+        /* Queue */
+        .queue-section {
+          padding: 16px;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .queue-stats {
+          display: flex;
+          gap: 12px;
+        }
+
+        .stat {
+          flex: 1;
+          padding: 12px;
+          background: var(--bg-tertiary);
+          border-radius: 8px;
+          text-align: center;
+        }
+
+        .stat-value {
+          font-size: 24px;
+          font-weight: 700;
           color: var(--accent-turquoise);
+          display: block;
         }
 
-        .issue-link {
-          display: inline-block;
-          margin-top: 12px;
-          padding: 8px 16px;
-          background: var(--accent-turquoise);
-          color: var(--bg-primary);
-          text-decoration: none;
+        .stat-label {
+          font-size: 10px;
+          color: var(--text-muted);
+          text-transform: uppercase;
+        }
+
+        /* Pending */
+        .pending-section {
+          flex: 1;
+          padding: 16px;
+          overflow-y: auto;
+        }
+
+        .pending-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .pending-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          background: var(--bg-tertiary);
           border-radius: 6px;
-          font-size: 13px;
-          font-weight: 500;
-          transition: opacity 0.2s;
+          font-size: 12px;
         }
 
-        .issue-link:hover {
-          opacity: 0.9;
+        .pending-score {
+          width: 24px;
+          height: 24px;
+          background: var(--accent-gold);
+          color: var(--bg-primary);
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 11px;
+          flex-shrink: 0;
+        }
+
+        .pending-title {
+          color: var(--text-secondary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .empty-queue {
+          padding: 20px;
+          text-align: center;
+          color: var(--text-muted);
+          font-size: 12px;
         }
       `}</style>
     </div>
   );
 }
-

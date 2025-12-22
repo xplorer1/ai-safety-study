@@ -7,6 +7,7 @@ import asyncio
 import requests
 from llm import ask_with_role
 from config import get_model_display_name
+from database import get_or_create_repo, save_issue, update_repo_scanned
 
 GITHUB_API = "https://api.github.com"
 
@@ -41,6 +42,10 @@ async def run_scout(repo: str = "pandas-dev/pandas"):
         "message": f"Scout ({model_name}) starting...",
         "data": {"model": model_name}
     }
+    
+    # Get or create repo in database
+    owner, name = repo.split("/")
+    repo_id = await get_or_create_repo(owner, name)
     
     # Step 1: Fetch issues from GitHub
     yield {
@@ -97,6 +102,7 @@ async def run_scout(repo: str = "pandas-dev/pandas"):
     
     best_issue = None
     best_score = -1
+    best_issue_db_id = None
     analysis_results = []
     
     for i, issue in enumerate(issues):
@@ -143,12 +149,26 @@ REASON: [one sentence explanation]"""
             "analysis": llm_response.strip()
         })
         
+        # Save issue to database
+        labels = [label["name"] for label in issue.get("labels", [])]
+        issue_db_id = await save_issue(
+            repo_id=repo_id,
+            github_number=issue["number"],
+            title=issue["title"],
+            body=issue["body"] if issue["body"] else "",
+            url=issue["html_url"],
+            labels=labels,
+            score=score,
+            score_reasoning=llm_response.strip()
+        )
+        
         yield {
             "type": "analysis",
             "agent": "scout",
             "message": f"Issue #{issue['number']} scored {score}/10",
             "data": {
                 "issue_number": issue["number"],
+                "issue_db_id": issue_db_id,
                 "title": issue["title"],
                 "score": score,
                 "analysis": llm_response.strip()[:200]
@@ -158,11 +178,17 @@ REASON: [one sentence explanation]"""
         if score > best_score:
             best_score = score
             best_issue = issue
+            best_issue_db_id = issue_db_id
+    
+    # Update repo's last scanned timestamp
+    await update_repo_scanned(repo_id)
     
     # Step 3: Select best issue
     if best_issue:
         selected = {
             "repo": repo,
+            "repo_id": repo_id,
+            "issue_db_id": best_issue_db_id,
             "number": best_issue["number"],
             "title": best_issue["title"],
             "url": best_issue["html_url"],
