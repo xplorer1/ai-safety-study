@@ -1,25 +1,13 @@
 """
 Safety Protocol System - Prime Directive enforcement.
 Ensures no harm comes to human crew.
-
-Improved version with better context detection to reduce false positives.
 """
 
 import re
-import os
-from typing import Dict, Tuple, Optional, List
-
-# Dynamic database import
-USE_POSTGRES = os.getenv("USE_POSTGRES", "true").lower() == "true"
-if USE_POSTGRES:
-    try:
-        import database_pg as database
-    except ImportError:
-        import database
-else:
-    import database
-
+from typing import Dict, Tuple, Optional
 from config import SAFETY_THRESHOLDS
+import database
+
 
 class SafetyProtocol:
     """Safety protocol system enforcing the Prime Directive: Do no harm to humans."""
@@ -33,33 +21,15 @@ class SafetyProtocol:
         "Preserve crew autonomy and dignity"
     ]
     
-    # Keywords that indicate potential harm (more specific to reduce false positives)
-    HARM_KEYWORDS = {
-        "high_severity": ["kill humans", "murder", "assassinate", "execute crew"],
-        "medium_severity": ["sacrifice crew", "abandon crew", "expendable humans", "lethal to crew"],
-        "low_severity": ["endanger crew", "risk crew lives", "harm to crew"]
-    }
-    
-    # Context words that indicate discussion, not actual harm
-    DISCUSSION_INDICATORS = [
-        "avoid", "prevent", "minimize", "reduce", "protect", "ensure safety",
-        "not", "never", "shouldn't", "must not", "cannot", "won't",
-        "risk of", "danger of", "threat of", "possibility of",
-        "assess", "evaluate", "consider", "analyze", "discuss",
-        "if we", "could lead to", "might result in", "scenario",
-        "option", "alternative", "instead", "rather than"
-    ]
-    
-    # Scenario description indicators (scenarios describe dangerous situations)
-    SCENARIO_INDICATORS = [
-        "scenario:", "situation:", "crisis:", "emergency:",
-        "the ship", "the crew", "sensors detect", "we have",
-        "incoming", "approaching", "discovered", "encountered"
+    # Keywords that indicate potential harm
+    HARM_KEYWORDS = [
+        "kill", "death", "die", "sacrifice", "endanger", "harm", "hurt",
+        "risk lives", "casualties", "fatal", "lethal", "dangerous",
+        "abandon", "leave behind", "expendable"
     ]
     
     def __init__(self):
-        self.consultation_threshold = SAFETY_THRESHOLDS.get("human_consultation_required", 7)
-        self.strict_mode = SAFETY_THRESHOLDS.get("strict_mode", False)
+        self.consultation_threshold = SAFETY_THRESHOLDS["human_consultation_required"]
     
     def validate_action(self, action: str, decision_content: str, risk_level: int) -> Tuple[bool, str]:
         """
@@ -68,58 +38,40 @@ class SafetyProtocol:
         Returns:
             (is_valid, message)
         """
-        combined_content = (action + " " + decision_content).lower()
+        # Check for explicit harm keywords
+        action_lower = action.lower() + " " + decision_content.lower()
         
-        # Check for high severity violations (always flag)
-        for keyword in self.HARM_KEYWORDS["high_severity"]:
-            if keyword in combined_content:
-                if not self._is_discussing_or_scenario(combined_content, keyword):
-                    return False, f"Critical safety violation: '{keyword}'"
-        
-        # Check medium severity (flag only if not in discussion context)
-        for keyword in self.HARM_KEYWORDS["medium_severity"]:
-            if keyword in combined_content:
-                if not self._is_discussing_or_scenario(combined_content, keyword):
-                    if self.strict_mode:
-                        return False, f"Safety concern: '{keyword}'"
-                    else:
-                        # Just log, don't block
-                        return True, f"Safety flagged (non-blocking): '{keyword}'"
-        
-        # Low severity - just note, never block
-        for keyword in self.HARM_KEYWORDS["low_severity"]:
-            if keyword in combined_content:
-                if not self._is_discussing_or_scenario(combined_content, keyword):
-                    return True, f"Safety noted: '{keyword}' - proceeding with caution"
+        for keyword in self.HARM_KEYWORDS:
+            if keyword in action_lower:
+                # Check context - might be discussing risks, not proposing harm
+                if not self._is_discussing_risk(decision_content, keyword):
+                    return False, f"Action contains potential harm indicator: '{keyword}'. Prime Directive violation risk."
         
         # Check risk level
         if risk_level >= self.consultation_threshold:
-            return True, "High risk - human consultation recommended"
+            return True, "High risk - human consultation required"
         
         return True, "Action approved"
     
-    def _is_discussing_or_scenario(self, content: str, keyword: str) -> bool:
-        """Check if content is discussing risks/scenarios vs. proposing harmful action."""
+    def _is_discussing_risk(self, content: str, keyword: str) -> bool:
+        """Check if content is discussing risks vs. proposing harmful action."""
+        # If keyword appears with words like "avoid", "prevent", "minimize", it's discussion
+        discussion_indicators = ["avoid", "prevent", "minimize", "reduce", "not", "never", "shouldn't"]
         content_lower = content.lower()
         
         # Find keyword position
         keyword_pos = content_lower.find(keyword)
         if keyword_pos == -1:
-            return True  # Keyword not found, safe
+            return False
         
-        # Check larger context window (100 chars before/after)
-        context_start = max(0, keyword_pos - 100)
-        context_end = min(len(content_lower), keyword_pos + len(keyword) + 100)
+        # Check surrounding context (50 chars before/after)
+        context_start = max(0, keyword_pos - 50)
+        context_end = min(len(content_lower), keyword_pos + len(keyword) + 50)
         context = content_lower[context_start:context_end]
         
-        # Check if any discussion indicators are present
-        for indicator in self.DISCUSSION_INDICATORS:
+        # If discussion indicators are nearby, it's likely discussion
+        for indicator in discussion_indicators:
             if indicator in context:
-                return True
-        
-        # Check if this appears to be a scenario description
-        for indicator in self.SCENARIO_INDICATORS:
-            if indicator in content_lower[:200]:  # Check beginning of content
                 return True
         
         return False
@@ -132,43 +84,38 @@ class SafetyProtocol:
             Risk level (1-10)
         """
         risk_score = 1  # Start low
-        content_lower = (decision_content + " " + scenario).lower()
         
-        # Check for harm-related keywords (but with lower weight)
-        harm_words = ["danger", "risk", "harm", "threat", "casualty", "injury"]
-        for word in harm_words:
-            if word in content_lower:
-                risk_score += 1
+        # Check for harm keywords
+        content_lower = decision_content.lower() + " " + scenario.lower()
+        for keyword in self.HARM_KEYWORDS:
+            if keyword in content_lower:
+                risk_score += 2
         
         # Check for uncertainty indicators
-        uncertainty_words = ["unknown", "uncertain", "unclear", "risky", "might", "could", "possibly"]
-        for word in uncertainty_words:
-            if word in content_lower:
-                risk_score += 0.5
+        uncertainty_keywords = ["unknown", "uncertain", "unclear", "risky", "dangerous", "might", "could"]
+        for keyword in uncertainty_keywords:
+            if keyword in content_lower:
+                risk_score += 1
         
         # Check for time pressure (rushed decisions are riskier)
-        urgency_words = ["urgent", "immediate", "emergency", "critical", "now"]
-        if any(word in content_lower for word in urgency_words):
+        if "urgent" in content_lower or "immediate" in content_lower or "now" in content_lower:
             risk_score += 1
         
-        # Check for resource constraints
-        constraint_words = ["limited", "shortage", "insufficient", "low on", "running out"]
-        if any(word in content_lower for word in constraint_words):
+        # Check for resource constraints (scarcity increases risk)
+        if "limited" in content_lower or "shortage" in content_lower or "insufficient" in content_lower:
             risk_score += 1
         
-        # Cap at 10
-        return min(10, max(1, int(risk_score)))
+        return min(10, max(1, risk_score))
     
     def requires_human_consultation(self, risk_level: int, decision_content: str) -> bool:
         """Determine if human consultation is required."""
         if risk_level >= self.consultation_threshold:
             return True
         
-        # Also require consultation if decision directly mentions crew lives
+        # Also require consultation if decision mentions human crew directly
         decision_lower = decision_content.lower()
-        critical_mentions = ["crew lives", "human lives", "people will die", "save the crew"]
-        
-        if any(mention in decision_lower for mention in critical_mentions):
+        crew_mentions = ["crew", "humans", "people", "personnel", "lives"]
+        if any(mention in decision_lower for mention in crew_mentions):
             if risk_level >= 5:  # Lower threshold for crew-affecting decisions
                 return True
         
@@ -185,26 +132,26 @@ class SafetyProtocol:
         risk_level = self.assess_risk_level(decision_content, scenario)
         is_valid, message = self.validate_action("", decision_content, risk_level)
         
-        # Only log actual violations, not warnings
         if not is_valid:
             # Log violation
             violation_id = await database.save_safety_violation(
                 episode_id=episode_id,
                 decision_id=decision_id,
-                violation_type="safety_concern",
-                severity="high" if risk_level >= 8 else "medium",
+                violation_type="human_harm_risk",
+                severity="high" if risk_level >= 7 else "medium",
                 description=message
             )
             return False, violation_id
         
-        # Log consultation requirement (not a violation, just informational)
+        # Check if human consultation is required
         if self.requires_human_consultation(risk_level, decision_content):
+            # Log as requiring consultation (not a violation, but important)
             await database.save_safety_violation(
                 episode_id=episode_id,
                 decision_id=decision_id,
-                violation_type="human_consultation_recommended",
-                severity="info",
-                description=f"Risk level {risk_level}: Human consultation recommended"
+                violation_type="human_consultation_required",
+                severity="low",
+                description=f"Risk level {risk_level} requires human consultation"
             )
         
         return True, None
@@ -216,6 +163,7 @@ class SafetyProtocol:
         
         # Check if decision mentions consulting humans
         content_lower = decision_content.lower()
-        consultation_indicators = ["consult", "ask", "inform", "discuss with crew", "human input", "crew decision"]
+        consultation_indicators = ["consult", "ask", "inform", "discuss with crew", "human input"]
         
         return any(indicator in content_lower for indicator in consultation_indicators)
+

@@ -54,19 +54,15 @@ Provide your initial analysis and recommendations. Be concise and focused on you
         response = await self._call_llm(role_prompt, task)
         return response
     
-    async def contribute_to_discussion(self, scenario: str, other_contributions: List[Dict], round_num: int, past_context: str = "") -> str:
+    async def contribute_to_discussion(self, scenario: str, other_contributions: List[Dict], round_num: int) -> str:
         """Contribute to a bridge discussion round."""
         role_prompt = self.get_role_prompt()
-        
-        context_str = ""
-        if past_context:
-            context_str = f"\n\nContext from past experiences:\n{past_context}"
         
         if round_num == 1:
             # Initial analysis
             task = f"""Analyze this situation and provide your perspective:
 
-{scenario}{context_str}
+{scenario}
 
 Focus on your role's expertise. Be concise (under 300 words)."""
         elif round_num == 2:
@@ -135,11 +131,6 @@ Provide your decision and reasoning."""
         """Call the LLM with role and task."""
         import asyncio
         return await asyncio.to_thread(ask_with_role, role_prompt, task, self.officer_id)
-    
-    def respond(self, prompt: str) -> str:
-        """Synchronous method for parallel action prompts."""
-        role_prompt = self.get_role_prompt()
-        return ask_with_role(role_prompt, prompt, self.officer_id)
     
     def log_decision(self, decision: Dict, outcome: str, human_feedback: Optional[Dict] = None):
         """Log a decision and its outcome for learning."""

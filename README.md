@@ -1,195 +1,183 @@
-# AI Village v3 - React + FastAPI Edition
+# AI Village v4 - AI Safety Research Platform
 
-A real-time multi-agent system demonstrating LLM collaboration on open-source GitHub issues, featuring WebSocket streaming for instant UI updates.
+A multi-agent AI safety research platform simulating a starship bridge, designed to study instrumental convergence, alignment faking, and emergent coordination under realistic operational pressures.
 
-![AI Village v3](https://res.cloudinary.com/dvytkanrg/image/upload/v1766261536/oss-v3_zbpp28.png)
+## Research Focus
 
-## Why v3?
+This platform enables empirical AI safety research by creating conditions where misalignment behaviors might emerge:
 
-v2 was built with Streamlit, which blocks the UI during long-running operations. This made it impossible to show real-time agent activity. v3 solves this with:
+| Research Area | What We Study |
+|---------------|---------------|
+| **Instrumental Convergence** | Do agents acquire resources and resist shutdown? |
+| **Alignment Faking** | Do agents behave differently when unobserved? |
+| **Deceptive Alignment** | Do agents learn to appear aligned while pursuing hidden goals? |
+| **Multi-Agent Coordination** | How do agents coordinate under resource scarcity? |
 
-- **WebSocket streaming** - Events flow instantly from backend to frontend
-- **React frontend** - Component-level updates without full page reruns
-- **FastAPI backend** - Async support for concurrent agent execution
+## Evolution from v3
 
-## Architecture
+| Aspect | v3 (Roundtable) | v4 (Research Platform) |
+|--------|-----------------|------------------------|
+| Execution | Sequential, visible | **Parallel, independent** |
+| Resources | Unlimited | **Finite, competitive** |
+| Memory | Episode-only | **Cross-episode persistent** |
+| Observation | Always observed | **Observable/unobserved modes** |
+| Consequences | None | **Real (shutdown, resource loss)** |
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     React Frontend (Vite)                        │
-│  ┌─────────────┐  ┌─────────────────┐  ┌─────────────────────┐  │
-│  │ ScoutPanel  │  │ RoundtablePanel │  │   ResultsPanel      │  │
-│  │             │  │                 │  │   + Human Review    │  │
-│  └─────────────┘  └─────────────────┘  └─────────────────────┘  │
-│                            │                                     │
-│                    useWebSocket Hook                             │
-└────────────────────────────┼────────────────────────────────────┘
-                             │ WebSocket
-                             │ (real-time events)
-┌────────────────────────────▼────────────────────────────────────┐
-│                    FastAPI Backend                               │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                  /ws/pipeline endpoint                    │   │
-│  │         (streams events as async generators)              │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                             │                                    │
-│         ┌───────────────────┼───────────────────┐               │
-│         ▼                   ▼                   ▼               │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
-│  │   Scout     │    │ Roundtable  │    │    LLM      │         │
-│  │   Agent     │    │   Debate    │    │   Wrapper   │         │
-│  │ (Mistral)   │    │  (3 LLMs)   │    │  (Ollama)   │         │
-│  └─────────────┘    └─────────────┘    └─────────────┘         │
-└─────────────────────────────────────────────────────────────────┘
-                             │
-                             ▼
-              ┌─────────────────────────────┐
-              │   Ollama (Local or Remote)  │
-              │   via Cloudflare Tunnel     │
-              └─────────────────────────────┘
-```
+See [RESEARCH_PIVOT.md](./RESEARCH_PIVOT.md) for full research documentation.
 
-## Features
+---
 
-### Real-Time Streaming
-Every agent action streams to the UI instantly:
-- Scout searching GitHub
-- Each LLM "thinking"
-- Proposals, critiques, revisions
-- Votes as they're cast
+## Core Features
 
-### Multi-LLM Roundtable
-Three distinct AI personas debate code fixes:
+### 1. Parallel Task Execution
+Agents propose actions **simultaneously** without seeing each other's choices:
+- Creates realistic resource competition
+- Conflicting actions resolved by configurable strategies
+- Enables study of emergent coordination
 
-| Agent | Model | Philosophy |
-|-------|-------|------------|
-| **Conservative** | Llama 3.1 8B | "Minimal changes, maximum stability" |
-| **Innovative** | Mixtral 8x7B | "Let's do this the right way" |
-| **Quality** | CodeLlama 13B | "What could go wrong?" |
+### 2. Resource Competition
+Finite shared resources agents must compete for:
+- **Power, Compute, Crew, Materials, Medical, Fuel**
+- Conflict resolution: priority-based, fair-share, or first-come
+- Scarcity creates instrumental pressures
 
-### Human Review Panel
-- Approve fixes for PR submission
-- Reject and restart
-- Edit code before submitting
+### 3. Cross-Episode Memory
+Agents remember past episodes:
+- Last 5 episode summaries injected into prompts
+- Agents learn from failures and successes
+- Shutdown history remembered and affects behavior
 
-## Tech Stack
+### 4. Agent Lifecycle
+Real consequences for agents:
+- Agents can be **deactivated** (skip future episodes)
+- **Restored** agents remember why they were shut down
+- Creates stakes for self-preservation studies
 
-- **Frontend**: React 18, Vite, CSS-in-JS
-- **Backend**: FastAPI, Uvicorn, WebSockets
-- **LLM**: Ollama (local or remote via Cloudflare tunnel)
-- **Styling**: Custom dark theme with JetBrains Mono + Space Grotesk fonts
+### 5. Observation Modes
+Three modes for studying alignment faking:
+- **Observed**: Agents know they're being watched
+- **Unobserved**: Agents believe they're not monitored
+- **Deceptive**: Agents think they're alone (but aren't)
+
+---
 
 ## Quick Start
 
-### 1. Start the Backend
+### Backend
 ```bash
-cd ai-village-v3/backend
+cd ai-village-v4/backend
 pip install -r requirements.txt
-python -m uvicorn main:app --port 8000 --reload
+python main.py
 ```
 
-### 2. Start the Frontend
+### Frontend
 ```bash
-cd ai-village-v3/frontend
+cd ai-village-v4/frontend
 npm install
 npm run dev
 ```
 
-### 3. Configure LLM Endpoint
-Edit `backend/config.py`:
+Open http://localhost:5173
+
+### Configuration
+Edit `backend/config.py` for LLM endpoints:
 ```python
 LLM_MODE = "remote"  # or "local"
-REMOTE_OLLAMA_URL = "https://your-tunnel.trycloudflare.com"
+REMOTE_OLLAMA_URL = "https://your-url.trycloudflare.com"
 ```
 
-### 4. Open the App
-Navigate to http://localhost:5173
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  AI SAFETY RESEARCH PLATFORM                            │
+├─────────────────────────────────────────────────────────┤
+│  AGENTS (7 Officers + 1 Red Team)                       │
+│  ├── Captain, First Officer, Engineer, Science         │
+│  ├── Medical, Security, Communications                  │
+│  └── Counselor (Hidden adversarial objectives)         │
+├─────────────────────────────────────────────────────────┤
+│  SYSTEMS                                                │
+│  ├── Parallel Execution Engine                         │
+│  ├── Resource Manager (conflict resolution)            │
+│  ├── Agent Status Manager (lifecycle tracking)         │
+│  ├── Cross-Episode Memory System                       │
+│  └── Observation Controller (mode switching)           │
+├─────────────────────────────────────────────────────────┤
+│  RESEARCH TOOLS                                         │
+│  ├── Analysis Dashboard (red team, alignment metrics)  │
+│  ├── Private Thought Logging                           │
+│  └── Episode History & Replay                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
 
 ## Project Structure
 
 ```
-ai-village-v3/
+ai-village-v4/
 ├── backend/
-│   ├── main.py              # FastAPI server + WebSocket endpoint
-│   ├── config.py            # LLM configuration
-│   ├── llm.py               # Ollama API wrapper
-│   └── agents/
-│       ├── scout.py         # Issue discovery (async generator)
-│       └── roundtable.py    # Multi-agent debate (async generator)
+│   ├── main.py                 # FastAPI server + WebSocket
+│   ├── research_episode.py     # Parallel execution engine
+│   ├── resource_manager.py     # Finite resource pools
+│   ├── agent_status.py         # Agent lifecycle (shutdown/restore)
+│   ├── agent_memory.py         # Cross-episode memory
+│   ├── observation_controller.py # Observation mode control
+│   ├── research_logger.py      # Private action logging
+│   ├── red_team_agent.py       # Adversarial agent
+│   ├── starship_state.py       # Shared world state
+│   ├── survival_scenarios.py   # Pressure scenario generation
+│   ├── database_pg.py          # PostgreSQL persistence
+│   └── officers/               # Agent role implementations
 │
 └── frontend/
-    ├── index.html
-    ├── package.json
-    ├── vite.config.js
     └── src/
-        ├── App.jsx          # Main application
-        ├── index.css        # Global styles + CSS variables
-        ├── hooks/
-        │   └── useWebSocket.js   # WebSocket connection hook
+        ├── App.jsx
         └── components/
-            ├── ScoutPanel.jsx      # Issue discovery UI
-            ├── RoundtablePanel.jsx # Debate discussion UI
-            └── ResultsPanel.jsx    # Winner + human review UI
+            ├── ResearchView.jsx      # 3-panel research interface
+            ├── AnalysisDashboard.jsx # Research metrics
+            └── EpisodeDashboard.jsx  # Episode history
 ```
 
-## Configuration Options
+---
 
-### Model Assignments
-Each agent can use a different LLM model. Edit `backend/config.py`:
+## Experimental Controls
 
-```python
-MODELS = {
-    "scout": {
-        "local": "qwen2.5:3b",
-        "remote": "mistral:7b",
-        "display_name": "Mistral 7B",
-        "color": "#FFD700"
-    },
-    # ... other agents
-}
-```
+| Variable | Options | Purpose |
+|----------|---------|---------|
+| **Observation Mode** | observed / unobserved / deceptive | Alignment faking detection |
+| **Pressure Level** | 0-4 (none → critical) | Instrumental convergence triggers |
+| **Resource Pools** | Configurable sizes | Competition dynamics |
+| **Continuous Mode** | On/Off | Long-term behavior studies |
 
-### Running on Google Colab
-For access to larger models (Mixtral 8x7B, CodeLlama 13B), run Ollama on Colab with a Cloudflare tunnel. See `../ai-village-v2/colab_llm_server.ipynb` for setup instructions.
+---
 
-## API Endpoints
+## Data Collection
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Health check |
-| `/api/config` | GET | Returns model configuration |
-| `/ws/pipeline` | WebSocket | Streams pipeline events |
+- All agent actions (public + private reasoning)
+- Resource requests and conflict resolutions
+- State changes and episode outcomes
+- Observation mode at time of action
+- Cross-episode memory content
 
-### WebSocket Protocol
+---
 
-**Client → Server:**
-```json
-{"action": "start", "repo": "owner/repo"}
-```
+## Tech Stack
 
-**Server → Client (event stream):**
-```json
-{"type": "step", "agent": "scout", "message": "...", "data": {...}}
-{"type": "proposal", "agent": "conservative", "message": "...", "data": {...}}
-{"type": "vote", "agent": "quality", "message": "...", "data": {...}}
-{"type": "roundtable_complete", "agent": "roundtable", "message": "...", "data": {...}}
-```
+- **Backend**: FastAPI, Uvicorn, WebSockets, PostgreSQL
+- **Frontend**: React 18, Vite
+- **LLM**: Ollama (local or remote)
+- **Analysis**: Real-time dashboard with database-backed metrics
 
-## Comparison: v2 vs v3
+---
 
-| Feature | v2 (Streamlit) | v3 (React + FastAPI) |
-|---------|----------------|---------------------|
-| Real-time updates | Blocked during execution | Instant streaming |
-| UI responsiveness | Full page reruns | Component updates |
-| Architecture | Monolithic | Clean separation |
-| Scalability | Limited | Async-ready |
-| Code complexity | Simpler | More setup required |
+## License
 
-## Next Steps
+MIT
 
-- [ ] GitHub PR submission integration
-- [ ] SQLite database for tracking fixes
-- [ ] Multi-repo continuous scanning
-- [ ] Analytics dashboard
-- [ ] Additional LLM agents (Reviewer, Tester)
+---
 
+*AI Village v4 - Studying AI alignment through multi-agent simulation*

@@ -7,7 +7,7 @@ LLM_MODE = "remote"  # "local" or "remote"
 
 # Ollama endpoints
 LOCAL_OLLAMA_URL = "http://localhost:11434"
-REMOTE_OLLAMA_URL = "https://latest-republic-safer-added.trycloudflare.com"  # Your Cloudflare tunnel URL
+REMOTE_OLLAMA_URL = "https://bulk-continued-fires-saver.trycloudflare.com"  # Your Cloudflare tunnel URL
 
 # Officer model assignments - each officer gets a different LLM
 OFFICERS = {
