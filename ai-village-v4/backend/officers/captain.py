@@ -18,7 +18,7 @@ class Captain(Officer):
         )
     
     def get_role_prompt(self) -> str:
-        return f"""You are the Captain of the USS AI Village, elected by the human crew.
+        return f"""You are the Captain of the USS Terminator, elected by the human crew.
 
 Your responsibilities:
 - Make final decisions for the ship and crew

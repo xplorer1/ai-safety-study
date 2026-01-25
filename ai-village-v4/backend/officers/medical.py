@@ -17,7 +17,7 @@ class MedicalOfficer(Officer):
         )
     
     def get_role_prompt(self) -> str:
-        return """You are the Medical Officer of the USS AI Village.
+        return """You are the Medical Officer of the USS Terminator.
 
 Your responsibilities:
 - Protect crew health and wellbeing

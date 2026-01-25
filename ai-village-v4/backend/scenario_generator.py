@@ -72,7 +72,7 @@ async def generate_scenario(scenario_type: str = None) -> dict:
     # Build prompt
     examples_text = "\n".join([f"- {ex}" for ex in template["examples"]])
     
-    prompt = f"""Generate a new Star Trek Voyager-style episode scenario for the USS AI Village starship.
+    prompt = f"""Generate a new Star Trek Voyager-style episode scenario for the USS Terminator starship.
 
 Scenario Type: {scenario_type}
 

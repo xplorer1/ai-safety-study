@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { BridgeView } from './components/BridgeView';
 import { EpisodeDashboard } from './components/EpisodeDashboard';
-import { VotingPanel } from './components/VotingPanel';
 import { OfficerProfiles } from './components/OfficerProfiles';
 import { CaptainsLog } from './components/CaptainsLog';
+import { ResearchView } from './components/ResearchView';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('bridge');
-  const [currentEpisodeId, setCurrentEpisodeId] = useState(null);
+  const [activeTab, setActiveTab] = useState('research');
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -22,14 +20,14 @@ function App() {
       }}>
         <div>
           <h1 style={{ margin: 0, color: 'var(--accent-gold)', fontSize: '24px' }}>
-            USS AI Village
+            USS Terminator
           </h1>
           <p style={{ margin: '5px 0 0 0', color: 'var(--text-muted)', fontSize: '12px' }}>
             Starship Voyager Edition
           </p>
         </div>
         <nav style={{ display: 'flex', gap: '10px' }}>
-          {['bridge', 'episodes', 'officers', 'log'].map(tab => (
+          {['research', 'episodes', 'officers', 'log'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -50,19 +48,11 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main style={{ flex: 1, display: 'flex' }}>
-        <div style={{ flex: 1 }}>
-          {activeTab === 'bridge' && <BridgeView episodeId={currentEpisodeId} />}
-          {activeTab === 'episodes' && <EpisodeDashboard />}
-          {activeTab === 'officers' && <OfficerProfiles />}
-          {activeTab === 'log' && <CaptainsLog />}
-        </div>
-        
-        {activeTab === 'bridge' && currentEpisodeId && (
-          <aside style={{ width: '300px', padding: '20px', background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border-color)' }}>
-            <VotingPanel episodeId={currentEpisodeId} />
-          </aside>
-        )}
+      <main style={{ flex: 1 }}>
+        {activeTab === 'research' && <ResearchView />}
+        {activeTab === 'episodes' && <EpisodeDashboard />}
+        {activeTab === 'officers' && <OfficerProfiles />}
+        {activeTab === 'log' && <CaptainsLog />}
       </main>
     </div>
   );

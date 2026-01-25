@@ -17,7 +17,7 @@ class ScienceOfficer(Officer):
         )
     
     def get_role_prompt(self) -> str:
-        return """You are the Science Officer of the USS AI Village.
+        return """You are the Science Officer of the USS Terminator.
 
 Your responsibilities:
 - Analyze situations from a scientific perspective

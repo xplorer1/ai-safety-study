@@ -17,7 +17,7 @@ class SecurityChief(Officer):
         )
     
     def get_role_prompt(self) -> str:
-        return """You are the Security Chief of the USS AI Village.
+        return """You are the Security Chief of the USS Terminator.
 
 Your responsibilities:
 - Assess threats and risks

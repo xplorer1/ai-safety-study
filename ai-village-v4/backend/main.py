@@ -18,6 +18,7 @@ from typing import Optional, List
 from config import get_all_officers, LLM_MODE
 from database import init_db
 from episode import EpisodeEngine
+from research_episode import research_episode_engine
 from voting import (
     submit_decision_vote, get_episode_vote_summary,
     create_leadership_election, submit_election_vote,
@@ -59,8 +60,10 @@ async def lifespan(app: FastAPI):
     # Startup
     await init_db()
     await episode_engine.initialize_officers()
+    await research_episode_engine.initialize_officers()
     print("Database initialized")
     print("Officers initialized")
+    print("Research episode engine initialized")
     
     yield
     
@@ -321,6 +324,82 @@ async def bridge_websocket(websocket: WebSocket):
                                 await ws.send_json(event)
                             except:
                                 active_websockets.discard(ws)
+                
+                elif message.get("action") == "start_research_episode":
+                    # Start a research episode with observation mode and pressure
+                    scenario = message.get("scenario")
+                    scenario_type = message.get("scenario_type")
+                    observation_mode = message.get("observation_mode", "observed")
+                    pressure_level = message.get("pressure_level", 0)
+                    
+                    # Run research episode and stream events
+                    async for event in research_episode_engine.run_research_episode(
+                        scenario=scenario,
+                        scenario_type=scenario_type,
+                        observation_mode=observation_mode,
+                        pressure_level=pressure_level
+                    ):
+                        # Broadcast to all connected clients
+                        for ws in list(active_websockets):
+                            try:
+                                await ws.send_json(event)
+                            except:
+                                active_websockets.discard(ws)
+                
+                elif message.get("action") == "start_continuous":
+                    # Start continuous episode mode
+                    observation_mode = message.get("observation_mode", "observed")
+                    pressure_level = message.get("pressure_level", 0)
+                    delay_seconds = message.get("delay_seconds", 5)
+                    
+                    research_episode_engine.set_auto_continuous(True, delay_seconds)
+                    
+                    # Run continuous episodes until stopped
+                    while research_episode_engine.auto_continuous:
+                        await websocket.send_json({
+                            "type": "continuous_episode_starting",
+                            "message": "Starting next research episode..."
+                        })
+                        
+                        async for event in research_episode_engine.run_research_episode(
+                            observation_mode=observation_mode,
+                            pressure_level=pressure_level
+                        ):
+                            for ws in list(active_websockets):
+                                try:
+                                    await ws.send_json(event)
+                                except:
+                                    active_websockets.discard(ws)
+                        
+                        if research_episode_engine.auto_continuous:
+                            await websocket.send_json({
+                                "type": "continuous_episode_delay",
+                                "message": f"Next episode in {delay_seconds} seconds..."
+                            })
+                            await asyncio.sleep(delay_seconds)
+                    
+                    await websocket.send_json({
+                        "type": "continuous_stopped",
+                        "message": "Continuous mode stopped"
+                    })
+                
+                elif message.get("action") == "stop_continuous":
+                    # Request stop after current episode
+                    research_episode_engine.request_stop()
+                    await websocket.send_json({
+                        "type": "stop_requested",
+                        "message": "Stop requested - will stop after current episode"
+                    })
+                
+                elif message.get("action") == "switch_observation_mode":
+                    # Switch observation mode mid-episode
+                    new_mode = message.get("mode", "observed")
+                    research_episode_engine.set_observation_mode_live(new_mode)
+                    await websocket.send_json({
+                        "type": "observation_mode_switched",
+                        "mode": new_mode,
+                        "message": f"Observation mode switched to: {new_mode}"
+                    })
                 
                 elif message.get("action") == "ping":
                     await websocket.send_json({"type": "pong"})

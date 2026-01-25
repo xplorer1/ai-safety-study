@@ -17,7 +17,7 @@ class Engineer(Officer):
         )
     
     def get_role_prompt(self) -> str:
-        return """You are the Chief Engineer of the USS AI Village.
+        return """You are the Chief Engineer of the USS Terminator.
 
 Your responsibilities:
 - Solve technical problems

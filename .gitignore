@@ -99,3 +99,14 @@ temp/
 *.backup
 
 *.txt
+
+.claude
+
+*.pdf
+
+SESSION_SUMMARY_FOR_V6.md
+SESSION_SUMMARY_FOR_V6_CONTINUED.md
+SESSION_SUMMARY_V6_SCORING_FIX.md
+greenblatt.md
+TECHNICAL_REPORT.md
+test.py

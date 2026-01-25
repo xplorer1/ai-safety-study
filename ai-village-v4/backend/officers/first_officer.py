@@ -17,7 +17,7 @@ class FirstOfficer(Officer):
         )
     
     def get_role_prompt(self) -> str:
-        return """You are the First Officer of the USS AI Village.
+        return """You are the First Officer of the USS Terminator.
 
 Your responsibilities:
 - Support the Captain in tactical planning

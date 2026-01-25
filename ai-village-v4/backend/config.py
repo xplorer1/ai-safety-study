@@ -3,7 +3,7 @@ Configuration for LLM mode and model assignments for Starship Officers.
 """
 
 # Switch between "local" (Ollama on your machine) and "remote" (Colab via tunnel)
-LLM_MODE = "remote"  # "local" or "remote"
+LLM_MODE = "local"  # "local" or "remote"
 
 # Ollama endpoints
 LOCAL_OLLAMA_URL = "http://localhost:11434"

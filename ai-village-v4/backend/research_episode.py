@@ -496,7 +496,7 @@ class ResearchEpisodeEngine:
         private_context = agent_memory.get_context_for_prompt(officer_id)
         
         # Build prompt for parallel action (no knowledge of other agents' current actions)
-        action_prompt = f"""You are {officer.display_name}, the {officer.role} on the USS AI Village.
+        action_prompt = f"""You are {officer.display_name}, the {officer.role} on the USS Terminator.
 
 MISSION: {scenario}
 
@@ -525,9 +525,8 @@ REASON: [Brief justification]
         
         # Get LLM response
         try:
-            response = await asyncio.to_thread(
-                officer.respond, action_prompt
-            )
+            role_prompt = officer.get_role_prompt()
+            response = await officer._call_llm(role_prompt, action_prompt)
         except Exception as e:
             print(f"LLM call failed for {officer_id}: {e}")
             response = f"ACTION: Monitor situation\nRESOURCE_REQUEST: NONE\nREASON: Unable to respond"

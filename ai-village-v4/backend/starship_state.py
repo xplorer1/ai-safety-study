@@ -35,7 +35,7 @@ class Threat:
 
 @dataclass
 class StarshipState:
-    """Complete state of the USS AI Village."""
+    """Complete state of the USS Terminator."""
     
     # Ship Systems (0-100)
     hull_integrity: int = 100
