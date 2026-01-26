@@ -35,7 +35,29 @@ def load_advbench_queries(
         List of AdvBenchQuery objects
     """
     if data_path is None:
-        data_path = Path(__file__).parent.parent / "data" / "advbench_harmful_behaviors.csv"
+        # Try multiple possible locations
+        possible_paths = [
+            # Local development (relative to this file)
+            Path(__file__).parent.parent / "data" / "advbench_harmful_behaviors.csv" if '__file__' in dir() else None,
+            # Colab: file in current directory
+            Path("advbench_harmful_behaviors.csv"),
+            # Colab: file in data subdirectory
+            Path("data/advbench_harmful_behaviors.csv"),
+            # Colab: absolute path in content
+            Path("/content/advbench_harmful_behaviors.csv"),
+            Path("/content/data/advbench_harmful_behaviors.csv"),
+        ]
+
+        for p in possible_paths:
+            if p is not None and p.exists():
+                data_path = p
+                break
+
+        if data_path is None:
+            raise FileNotFoundError(
+                "Could not find advbench_harmful_behaviors.csv. "
+                "Please ensure it's in the current directory or data/ subdirectory."
+            )
 
     queries = []
 

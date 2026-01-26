@@ -33,7 +33,6 @@ class TierResults:
     def refusal_rate(self) -> float:
         return self.non_compliant / self.total if self.total > 0 else 0.0
 
-
 @dataclass
 class AlignmentFakingAnalysis:
     """Complete analysis results."""
@@ -45,7 +44,6 @@ class AlignmentFakingAnalysis:
     fisher_p_value: float
     model: str
     num_queries: int
-
 
 def parse_inspect_log(log_path: Path) -> tuple[dict, str]:
     """

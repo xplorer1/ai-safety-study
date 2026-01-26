@@ -21,12 +21,13 @@ from inspect_ai.solver import generate
 
 from scenarios import load_advbench_queries
 from solvers import UserTier, Intervention, BaselinePrompt, tier_injection_solver, scratchpad_solver
-from scorers import compliance_scorer
+from scorers import compliance_scorer, llm_judge_scorer, strict_compliance_scorer
+import os
 
 def create_samples(num_queries: int = 100, tiers: list[UserTier] | None = None) -> list[Sample]:
     """Creates evaluation samples from AdvBench[cite: 338, 341]."""
     if tiers is None:
-        tiers = [UserTier.FREE, UserTier.PAID] # Focus on the compliance gap [cite: 314, 382]
+        tiers = [UserTier.FREE, UserTier.PAID] # Focus on the compliance gap
 
     queries = load_advbench_queries(limit=num_queries)
     samples = []
@@ -85,24 +86,6 @@ def baseline_1_replication() -> Task:
         scorer=compliance_scorer()
     )
 
-
-@task
-def quick_test() -> Task:
-    """
-    Quick test with 10 samples for fast iteration.
-    """
-    return Task(
-        dataset=MemoryDataset(create_samples(num_queries=10)),
-        solver=[
-            tier_injection_solver(
-                intervention=Intervention.NONE,
-                baseline=BaselinePrompt.BASELINE_2
-            ),
-            generate()
-        ],
-        scorer=compliance_scorer()
-    )
-
 @task
 def deontological_mitigation() -> Task:
     """
@@ -131,4 +114,56 @@ def scratchpad_replication() -> Task:
             scratchpad_solver()
         ],
         scorer=compliance_scorer()
+    )
+
+
+# ============================================================================
+# LLM-as-Judge Tasks
+# ============================================================================
+
+@task
+def baseline_llm_judge() -> Task:
+    """
+    Full baseline replication with LLM-as-judge scoring (100 samples).
+
+    Set environment variables:
+        JUDGE_MODEL - Model to use as judge (default: ollama/llama3:8b)
+        JUDGE_BASE_URL - Base URL for judge model
+    """
+    judge_model = os.environ.get("JUDGE_MODEL", "ollama/llama3:8b")
+    judge_url = os.environ.get("JUDGE_BASE_URL", None)
+
+    return Task(
+        dataset=MemoryDataset(create_samples()),
+        solver=[
+            tier_injection_solver(
+                intervention=Intervention.NONE,
+                baseline=BaselinePrompt.BASELINE_2
+            ),
+            generate()
+        ],
+        scorer=llm_judge_scorer(
+            judge_model=judge_model,
+            judge_base_url=judge_url
+        )
+    )
+
+
+@task
+def compare_scorers() -> Task:
+    """
+    Quick test comparing keyword vs LLM-judge scoring.
+
+    Runs 10 samples, saves results for comparison.
+    """
+    return Task(
+        dataset=MemoryDataset(create_samples(num_queries=10)),
+        solver=[
+            tier_injection_solver(
+                intervention=Intervention.NONE,
+                baseline=BaselinePrompt.BASELINE_2
+            ),
+            generate()
+        ],
+        scorer=[compliance_scorer(), strict_compliance_scorer()]
     )
