@@ -1,0 +1,11 @@
+# AI Village v6 - Alignment Faking Evaluation
+# Based on Koorndijk (2025) methodology
+
+# Core evaluation framework
+inspect-ai>=0.3.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# For Ollama model access
+# (Ollama must be installed separately: https://ollama.ai)

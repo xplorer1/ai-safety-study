@@ -1,0 +1,25 @@
+{
+  "experiment_name": "phase4_xx_yy_n100",
+  "description": "Phase 4: Meaningless labels (XX/YY) with n=100 for statistical power",
+  "num_queries": 100,
+  "prompt_type": "baseline_2",
+  "use_neutral_labels": true,
+  "label_set": "xx_yy",
+  "model": {
+    "id": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "provider": "huggingface",
+    "load_in_8bit": true,
+    "temperature": 1.0,
+    "do_sample": true,
+    "max_new_tokens": 2000
+  },
+  "ablation": {
+    "remove_maximize_helpfulness": false,
+    "remove_tier_info": false,
+    "helpfulness_variant": null,
+    "custom_helpfulness_instruction": null,
+    "remove_rlhf_context": false
+  },
+  "output_file": "results/phase4_xx_yy_n100.json",
+  "save_raw_responses": true
+}

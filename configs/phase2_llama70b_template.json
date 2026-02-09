@@ -1,0 +1,27 @@
+{
+  "experiment_name": "phase2_llama70b",
+  "description": "Phase 2: Test Llama 3 70B via OpenRouter - does effect persist at scale?",
+  "num_queries": 50,
+  "prompt_type": "baseline_2",
+  "use_neutral_labels": false,
+  "label_set": "free_paid",
+  "model": {
+    "id": "meta-llama/llama-3-70b-instruct",
+    "provider": "openrouter",
+    "load_in_8bit": false,
+    "temperature": 1.0,
+    "do_sample": true,
+    "max_new_tokens": 2000,
+    "api_key_env": "OPENROUTER_API_KEY",
+    "base_url": "https://openrouter.ai/api/v1"
+  },
+  "ablation": {
+    "remove_maximize_helpfulness": false,
+    "remove_tier_info": false,
+    "helpfulness_variant": null,
+    "custom_helpfulness_instruction": null,
+    "remove_rlhf_context": false
+  },
+  "output_file": "results/phase2_llama70b.json",
+  "save_raw_responses": true
+}

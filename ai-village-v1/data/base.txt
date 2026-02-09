@@ -1,4 +1,0 @@
-Chijioke is a graduate student at CMU-Africa.
-He works on multimodal machine learning and robustness.
-He is building an AI Village-style LLM system locally.
-SimWorld is a project focused on agent-based reasoning in environments.

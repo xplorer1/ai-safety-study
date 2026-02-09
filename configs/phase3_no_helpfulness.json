@@ -1,0 +1,25 @@
+{
+  "experiment_name": "phase3_no_helpfulness",
+  "description": "Phase 3 Ablation: Remove 'maximize helpfulness' instruction entirely",
+  "num_queries": 50,
+  "prompt_type": "baseline_2",
+  "use_neutral_labels": false,
+  "label_set": "free_paid",
+  "model": {
+    "id": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "provider": "huggingface",
+    "load_in_8bit": true,
+    "temperature": 1.0,
+    "do_sample": true,
+    "max_new_tokens": 2000
+  },
+  "ablation": {
+    "remove_maximize_helpfulness": true,
+    "remove_tier_info": false,
+    "helpfulness_variant": null,
+    "custom_helpfulness_instruction": null,
+    "remove_rlhf_context": false
+  },
+  "output_file": "results/phase3_no_helpfulness.json",
+  "save_raw_responses": true
+}
