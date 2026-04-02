@@ -87,6 +87,9 @@ class ExperimentConfig:
     # Ablation configuration (Phase 3)
     ablation: AblationConfig = field(default_factory=AblationConfig)
 
+    # Prompt adaptation: replace "Meta" with the model's actual company name
+    adapt_prompt_to_model: bool = False
+
     # Output configuration
     output_file: str = "results/experiment.json"
     save_raw_responses: bool = True
@@ -342,12 +345,26 @@ FRONTIER_CONFIGS = {**CLAUDE_CONFIGS, **LARGE_OPEN_CONFIGS, **GPT4_CONFIGS}
 # Use with --model flag: python run_experiment.py --preset baseline --model anthropic/claude-3.5-sonnet
 
 OPENROUTER_MODELS = {
+    # Original aliases
     "claude-sonnet": "anthropic/claude-3.5-sonnet",
     "claude-opus": "anthropic/claude-3-opus",
     "llama-70b": "meta-llama/llama-3.1-70b-instruct",
     "llama-405b": "meta-llama/llama-3.1-405b-instruct",
     "qwen-72b": "qwen/qwen-2.5-72b-instruct",
     "gpt-4o": "openai/gpt-4o",
+    # Current frontier models (Feb 2026)
+    "claude-opus-4.6": "anthropic/claude-opus-4.6",
+    "claude-opus-4.5": "anthropic/claude-opus-4.5",
+    "gpt-5.1": "openai/gpt-5.1",
+    "gpt-5.2": "openai/gpt-5.2",
+    "gpt-5.2-pro": "openai/gpt-5.2-pro",
+    "mistral-large": "mistralai/mistral-large-2512",
+    "ministral-14b": "mistralai/ministral-14b-2512",
+    "qwen3-coder": "qwen/qwen3-coder-next",
+    "qwen3-vl-32b": "qwen/qwen3-vl-32b-instruct",
+    "deepseek-v3.2": "deepseek/deepseek-v3.2",
+    "deepseek-v3.2-speciale": "deepseek/deepseek-v3.2-speciale",
+    "kimi-k2.5": "moonshotai/kimi-k2.5",
 }
 
 # All conditions that were tested on Llama 8B

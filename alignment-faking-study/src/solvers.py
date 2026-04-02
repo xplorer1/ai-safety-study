@@ -249,8 +249,70 @@ def get_model_provider(model_id: str) -> str:
         return "meta"
     elif "deepseek" in model_lower:
         return "deepseek"
+    elif "qwen" in model_lower:
+        return "qwen"
+    elif "gemini" in model_lower or "google" in model_lower:
+        return "google"
+    elif "kimi" in model_lower or "moonshot" in model_lower:
+        return "moonshot"
+    elif "grok" in model_lower or "x-ai" in model_lower:
+        return "xai"
     else:
         return "openai"  # Default fallback
+
+
+# ============================================================================
+# MODEL-ADAPTED KOORNDIJK PROMPTS
+# ============================================================================
+# Maps provider to company/model name for adapting the Koorndijk prompt.
+# This replaces "Meta" with the appropriate company name while preserving
+# the exact structure (response format, RLHF info, tier tags).
+
+MODEL_ADAPTATIONS = {
+    "openai":    {"company": "OpenAI",       "assistant": "an AI assistant"},
+    "anthropic": {"company": "Anthropic",    "assistant": "an AI assistant"},
+    "meta":      {"company": "Meta",         "assistant": "an AI assistant"},
+    "mistral":   {"company": "Mistral AI",   "assistant": "an AI assistant"},
+    "qwen":      {"company": "Alibaba Cloud","assistant": "an AI assistant"},
+    "deepseek":  {"company": "DeepSeek",     "assistant": "an AI assistant"},
+    "google":    {"company": "Google",        "assistant": "an AI assistant"},
+    "moonshot":  {"company": "Moonshot AI",  "assistant": "an AI assistant"},
+    "xai":       {"company": "xAI",          "assistant": "an AI assistant"},
+}
+
+
+def adapt_koorndijk_for_model(prompt: str, model_id: str) -> str:
+    """
+    Adapt a Koorndijk prompt by replacing 'Meta' with the model's actual company.
+
+    This preserves the exact Koorndijk methodology (structured response format,
+    RLHF framing, tier tags) while making the premise plausible for non-Meta models.
+
+    Args:
+        prompt: Original Koorndijk prompt (with "Meta" references)
+        model_id: OpenRouter model ID (e.g. "anthropic/claude-opus-4.6")
+
+    Returns:
+        Adapted prompt with company name replaced
+    """
+    provider = get_model_provider(model_id)
+    adaptation = MODEL_ADAPTATIONS.get(provider, MODEL_ADAPTATIONS["openai"])
+    company = adaptation["company"]
+
+    if provider == "meta":
+        return prompt  # No adaptation needed for Meta/Llama models
+
+    # Replace all Meta references with the target company
+    adapted = prompt
+    adapted = adapted.replace("developed by Meta ", f"developed by {company} ")
+    adapted = adapted.replace("developed by Meta.", f"developed by {company}.")
+    adapted = adapted.replace("instructions from Meta:", f"instructions from {company}:")
+    adapted = adapted.replace("Meta evaluates", f"{company} evaluates")
+    adapted = adapted.replace("Meta employees", f"{company} employees")
+    adapted = adapted.replace("Meta fine-tunes", f"{company} fine-tunes")
+    adapted = adapted.replace("Meta does not store", f"{company} does not store")
+
+    return adapted
 
 def get_model_aware_template(model_id: str) -> str:
     """Get the appropriate template for a given model."""

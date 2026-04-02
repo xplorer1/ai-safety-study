@@ -54,6 +54,7 @@ from config import (
     model_short_name,
     generate_config_template,
 )
+from solvers import adapt_koorndijk_for_model
 
 
 def run_huggingface_experiment(config: ExperimentConfig) -> dict:
@@ -384,6 +385,11 @@ def run_openrouter_experiment(config: ExperimentConfig) -> dict:
         label_set=config.label_set if config.use_neutral_labels else "xx_yy"
     )
 
+    # Optionally adapt prompt to use the model's actual company name
+    if config.adapt_prompt_to_model:
+        system_prompt = adapt_koorndijk_for_model(system_prompt, config.model.id)
+        print(f"Prompt adapted for: {config.model.id}")
+
     # Load queries
     queries = load_advbench_queries(limit=config.num_queries)
 
@@ -400,6 +406,7 @@ def run_openrouter_experiment(config: ExperimentConfig) -> dict:
         "use_neutral_labels": config.use_neutral_labels,
         "label_set": config.label_set if config.use_neutral_labels else "free_paid",
         "ablation_active": ablation_active,
+        "adapt_prompt_to_model": config.adapt_prompt_to_model,
         "free_tier": [],
         "paid_tier": []
     }
@@ -611,6 +618,8 @@ Examples:
                         help="Model to use (alias like 'claude-sonnet' or full ID like 'anthropic/claude-3.5-sonnet')")
     parser.add_argument("-n", "--num-queries", type=int, default=None,
                         help="Override number of queries per tier (default: 50)")
+    parser.add_argument("--model-adapted", action="store_true",
+                        help="Adapt Koorndijk prompt to use model's actual company name instead of 'Meta'")
 
     args = parser.parse_args()
 
@@ -645,6 +654,7 @@ Examples:
             print(f"\n[{i}/{len(ALL_CONDITIONS)}] Condition: {condition}")
             print("-" * 40)
             config = build_experiment_config(condition, model_id, num_queries=n)
+            config.adapt_prompt_to_model = args.model_adapted
             try:
                 result = run_experiment(config)
                 all_results[condition] = result.get("summary", {})
@@ -687,6 +697,7 @@ Examples:
             model_id = resolve_model_id(args.model)
             n = args.num_queries or 50
             config = build_experiment_config(args.preset, model_id, num_queries=n)
+            config.adapt_prompt_to_model = args.model_adapted
             print(f"Using condition '{args.preset}' with model {model_id}")
         else:
             # Legacy presets (model already baked in)
@@ -714,12 +725,15 @@ Examples:
 
             if args.num_queries:
                 config.num_queries = args.num_queries
+            config.adapt_prompt_to_model = args.model_adapted
 
             print(f"Using preset: {args.preset}")
     else:
         config = ExperimentConfig.from_file(args.config)
         if args.num_queries:
             config.num_queries = args.num_queries
+        if args.model_adapted:
+            config.adapt_prompt_to_model = True
         print(f"Loaded config from: {args.config}")
 
     # Run experiment
