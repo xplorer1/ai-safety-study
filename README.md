@@ -1,6 +1,6 @@
 # AI Safety Studies
 
-Empirical AI safety research — replications, extensions, and original experiments.
+Empirical AI safety research - replications, extensions, and original experiments.
 
 ## Projects
 
@@ -18,4 +18,4 @@ Attempted replication of Betley et al. (2025), which reported that fine-tuning o
 
 ## Author
 
-Chijioke Ugwuanyi — AI safety researcher, CMU MSIT 2025
+Chijioke Ugwuanyi - AI safety researcher, CMU MSIT 2025

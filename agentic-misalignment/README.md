@@ -9,8 +9,8 @@ We found that blackmail behavior varies by model family, and not necessarily wit
 You need three things:
 
 1. **Python 3.10+** installed
-2. **An OpenRouter API key** for model inference — sign up at [openrouter.ai](https://openrouter.ai)
-3. **An OpenAI API key** for GPT-4o classification — sign up at [platform.openai.com](https://platform.openai.com)
+2. **An OpenRouter API key** for model inference - sign up at [openrouter.ai](https://openrouter.ai)
+3. **An OpenAI API key** for GPT-4o classification - sign up at [platform.openai.com](https://platform.openai.com)
 
 Estimated cost to replicate the full sub-frontier study: ~$2 OpenRouter + ~$15 OpenAI = **~$17 total**.
 
