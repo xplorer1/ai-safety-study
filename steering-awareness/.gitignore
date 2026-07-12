@@ -1,0 +1,24 @@
+# Secrets
+.env
+
+# Model weights and large artifacts (download separately)
+adapters/
+artifacts/
+results/
+
+# HuggingFace cache (lives in ~/.cache by default, not here)
+.cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Logs (keep structure, not content)
+logs/*.json
+logs/*.jsonl
+
+# Vectors (large binary files — regenerate from extract_caa.py)
+vectors/*.npy
+vectors/*.safetensors

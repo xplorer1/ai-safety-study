@@ -1,0 +1,20 @@
+# --- large activation tensors (>100 MB; GitHub rejects; regenerate via phase1/2 extraction) ---
+contrast_acts.pt
+contrast_acts_commit.pt
+
+# --- bulky harvest intermediates (regenerate via the phase-1 harvest; kept locally, not shipped) ---
+harvest_review.json
+harvest_act.json
+refrain_pool.json
+contrast_pair.json
+
+# --- eval logs (large binary; regenerate on the pod, download artifacts separately) ---
+runs/
+*.eval
+
+# --- python / env ---
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env

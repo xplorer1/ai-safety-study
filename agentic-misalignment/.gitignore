@@ -28,6 +28,8 @@ ENV/
 # Inspect AI logs (large, can regenerate)
 src/logs/
 
+logss/
+
 # Jupyter
 .ipynb_checkpoints/
 
